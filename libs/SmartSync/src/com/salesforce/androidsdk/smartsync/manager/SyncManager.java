@@ -385,6 +385,7 @@ public class SyncManager {
         final SyncUpTarget target = (SyncUpTarget) sync.getTarget();
 		final SyncOptions options = sync.getOptions();
 		final List<String> fieldlist = options.getFieldlist();
+		final List<String> fieldlistUpdate = options.getFieldlistUpdate();
 		final MergeMode mergeMode = options.getMergeMode();
         final Set<String> dirtyRecordIds = target.getIdsOfRecordsToSyncUp(this, soupName);
 		int totalSize = dirtyRecordIds.size();
@@ -393,7 +394,7 @@ public class SyncManager {
         int i = 0;
         for (final String id : dirtyRecordIds) {
             JSONObject record = smartStore.retrieve(soupName, Long.valueOf(id)).getJSONObject(0);
-            syncUpOneRecord(target, soupName, fieldlist, record, mergeMode);
+            syncUpOneRecord(target, soupName, fieldlist, fieldlistUpdate, record, mergeMode);
 
             // Updating status
             int progress = (i + 1) * 100 / totalSize;
@@ -431,7 +432,7 @@ public class SyncManager {
     }
 
     private void syncUpOneRecord(SyncUpTarget target, String soupName, List<String> fieldlist,
-                                    JSONObject record, MergeMode mergeMode) throws JSONException, IOException {
+                                    List<String> fieldlistUpdate, JSONObject record, MergeMode mergeMode) throws JSONException, IOException {
 
         // Do we need to do a create, update or delete
         boolean locallyDeleted = record.getBoolean(LOCALLY_DELETED);
@@ -475,8 +476,14 @@ public class SyncManager {
 
         // Fields to save (in the case of create or update)
         Map<String, Object> fields = new HashMap<String, Object>();
-        if (action == Action.create || action == Action.update) {
+        if (action == Action.create) {
             for (String fieldName : fieldlist) {
+                if (!fieldName.equals(target.getIdFieldName()) && !fieldName.equals(SyncUpTarget.MODIFICATION_DATE_FIELD_NAME)) {
+                    fields.put(fieldName, SmartStore.project(record, fieldName));
+                }
+            }
+        }else if(action == Action.update){
+            for (String fieldName : fieldlistUpdate) {
                 if (!fieldName.equals(target.getIdFieldName()) && !fieldName.equals(SyncUpTarget.MODIFICATION_DATE_FIELD_NAME)) {
                     fields.put(fieldName, SmartStore.project(record, fieldName));
                 }

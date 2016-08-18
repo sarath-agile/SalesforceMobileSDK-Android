@@ -43,9 +43,11 @@ public class SyncOptions {
 
     public static final String MERGEMODE = "mergeMode";
 	public static final String FIELDLIST = "fieldlist";
+	public static final String FIELDLIST_UPDATE = "fieldlistUpdate";
 
     private MergeMode mergeMode;
 	private List<String> fieldlist;
+	private List<String> fieldlistUpdate;
 	
 	/**
 	 * Build SyncOptions from json
@@ -60,7 +62,8 @@ public class SyncOptions {
         String mergeModeStr = JSONObjectHelper.optString(options, MERGEMODE);
         MergeMode mergeMode = mergeModeStr == null ? null : MergeMode.valueOf(mergeModeStr);
 		List<String> fieldlist = toList(options.optJSONArray(FIELDLIST));
-		return new SyncOptions(fieldlist, mergeMode);
+		List<String> fieldlistUpdate = toList(options.optJSONArray(FIELDLIST_UPDATE));
+		return new SyncOptions(fieldlist, fieldlistUpdate, mergeMode);
 	}
 
 	/**
@@ -68,16 +71,36 @@ public class SyncOptions {
 	 * @return
 	 */
 	public static SyncOptions optionsForSyncUp(List<String> fieldlist) {
-		return new SyncOptions(fieldlist, MergeMode.OVERWRITE);
+		return new SyncOptions(fieldlist, fieldlist, MergeMode.OVERWRITE);
 	}
 
-    /**
+	/**
+	 * @param fieldlist
+     * @param fieldlistUpdate
+	 * @return
+	 */
+	public static SyncOptions optionsForSyncUp(List<String> fieldlist,List<String> fieldlistUpdate) {
+		return new SyncOptions(fieldlist, fieldlistUpdate, MergeMode.OVERWRITE);
+	}
+
+	/**
      * @param fieldlist
      * @param mergeMode
      * @return
      */
     public static SyncOptions optionsForSyncUp(List<String> fieldlist, MergeMode mergeMode) {
-        return new SyncOptions(fieldlist, mergeMode);
+        return new SyncOptions(fieldlist, fieldlist, mergeMode);
+    }
+
+
+    /**
+     * @param fieldlist
+     * @param fieldlistUpdate
+     * @param mergeMode
+     * @return
+     */
+    public static SyncOptions optionsForSyncUp(List<String> fieldlist,List<String> fieldlistUpdate, MergeMode mergeMode) {
+        return new SyncOptions(fieldlist, fieldlistUpdate, mergeMode);
     }
 
     /**
@@ -85,16 +108,18 @@ public class SyncOptions {
      * @return
      */
     public static SyncOptions optionsForSyncDown(MergeMode mergeMode) {
-        return new SyncOptions(null, mergeMode);
+        return new SyncOptions(null,null, mergeMode);
     }
 
 	/**
 	 * Private constructor
 	 * @param fieldlist
+     * @param fieldlistUpdate
      * @param mergeMode
 	 */
-	private SyncOptions(List<String> fieldlist, MergeMode mergeMode) {
+	private SyncOptions(List<String> fieldlist, List<String> fieldlistUpdate, MergeMode mergeMode) {
 		this.fieldlist = fieldlist;
+		this.fieldlistUpdate = fieldlistUpdate;
         this.mergeMode = mergeMode;
 	}
 	
@@ -106,11 +131,16 @@ public class SyncOptions {
 		JSONObject options = new JSONObject();
         if (mergeMode != null) options.put(MERGEMODE, mergeMode.name());
 		if (fieldlist != null) options.put(FIELDLIST, new JSONArray(fieldlist));
+		if (fieldlistUpdate != null) options.put(FIELDLIST_UPDATE, new JSONArray(fieldlistUpdate));
 		return options;
 	}
 
 	public List<String> getFieldlist() {
 		return fieldlist;
+	}
+
+	public List<String> getFieldlistUpdate() {
+		return fieldlistUpdate;
 	}
 
     public MergeMode getMergeMode() {
